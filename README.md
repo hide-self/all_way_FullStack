@@ -1,2 +1,3 @@
-# all_way_FullStack
-Vue3+Django5 knowledges and Linux Deployment learning
+# 本仓库结构
+"一路通关Python全栈开发.md"文档中存放的是整个仓库学习的文档大纲
+"一路通关Python全栈开发图片集"是上面md文档的图片放置文件夹
