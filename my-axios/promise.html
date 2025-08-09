@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+
+</body>
+
+<script>
+    //回调函数中调用回调函数，就会形成“回调地狱”，这样的代码十分难以维护且难以读懂
+    // setTimeout就是一个典型回调函数，他会在1s后调用传入的函数，1s后又会继续调用函数
+    setTimeout(() => {
+        console.log("第一行输出");
+
+        setTimeout(() => {
+            console.log("第二行输出");
+            setTimeout(() => {
+                console.log("第三行输出");
+            }, 1000);
+        }, 1000);
+
+    }, 1000)
+
+    // promise就是用来解决这样的问题的
+    // 传入两个参数： resolve成功函数、reject失败函数
+    new Promise((resolve,reject)=>{
+        console.log("第一行输出");
+        if(false){
+            // 成功后，调用成功函数resolve，并往里面传入里面的字符串
+            resolve("第二行正确输出")
+        }
+        else{
+            // 失败后，调用失败函数reject，并往里面传入里面的字符串
+            reject("第二行错误输出")
+        }
+    }).then((res)=>{
+        // 成功函数resolve中传入的参数，在此处变成了res
+        console.log(res)
+
+        // 在.then()函数中，再次调用成功函数
+        // // 写法一：
+        // return Promise.resolve("第三行正确输出")
+        // 写法二
+        return new Promise((resolve,reject)=>{
+            resolve("第三行正确输出")
+        })
+
+    },(err)=>{
+        // 失败函数reject中传入的参数，在此处变成了res
+        console.log(err);
+
+        return Promise.reject("第三行错误输出")
+    }).then((res)=>{
+        console.log(res)
+    },(err)=>{
+        console.log(err)
+    })
+
+
+</script>
+
+</html>

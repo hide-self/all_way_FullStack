@@ -1031,6 +1031,259 @@ module.exports = {
 
 
 
+# axios网络请求
+
+axios是一个基于promise的网络请求库。axios可以实现HTTP协议各种方法的网络请求（get、post、delete等）。axios是最常用的前后端分离的网络请求库。
+
+axios官方文档（https://www.axios-http.cn/docs/intro）
+
+
+
+## 理解ES6的promise原理
+
+promise的引入主要是为了解决一个叫做“回调地狱“的问题。
+
+我们先进入一段代码看看，什么叫”回调地狱“。
+
+下面的代码中，先经过1s会在控制台打印"第一行输出"，再经过1s会在控制台打印"第二行输出"，再经过1s会在控制台打印"第三行输出"……若有100次回调，它的缩进就会很长，并且可读性很差。此时我们就需要引入promise类来解决回调问题。
+
+```javascript
+	//回调函数中调用回调函数，就会形成“回调地狱”，这样的代码十分难以维护且难以读懂
+    // setTimeout就是一个典型回调函数，他会在1s后调用传入的函数，1s后又会继续调用函数
+    setTimeout(() => {
+        console.log("第一行输出");
+
+        setTimeout(() => {
+            console.log("第二行输出");
+            setTimeout(() => {
+                console.log("第三行输出");
+            }, 1000);
+        }, 1000);
+
+    }, 1000)
+
+```
+
+
+
+如图所示就是promise对象使用方法。构造promise对象时，传入一个函数，这个函数将立即执行。这个函数中将会默认自带两个参数resolve（成功函数）、reject（失败函数）。这个函数里面我们可以进入不同的分支，调用resolve或者reject就会进入成功函数分支与失败函数分支，并往里面传入一个参数。通过在promise对象后面打点调用.then()函数，就可以进入下一层回调，下一层回调中，第一个函数传入的是成功函数resvole的分支，第二个函数传入的是成功函数resject的分支，刚才二者分支传入的参数就是res或err。若想继续下一层回调，有两种方式：一是返回Promise.resolve(参数)直接进入分支，二是返回一个新的Promise对象，往里面传入带有resolve、reject参数的函数即可。这样就能够通过.then()函数不断地回调深入，不用担心缩进会很长
+
+```javascript
+// promise就是用来解决这样的问题的
+    // 传入两个参数： resolve成功函数、reject失败函数
+    new Promise((resolve,reject)=>{
+        console.log("第一行输出");
+        if(false){
+            // 成功后，调用成功函数resolve，并往里面传入里面的字符串
+            resolve("第二行正确输出")
+        }
+        else{
+            // 失败后，调用失败函数reject，并往里面传入里面的字符串
+            reject("第二行错误输出")
+        }
+    }).then((res)=>{
+        // 成功函数resolve中传入的参数，在此处变成了res
+        console.log(res)
+
+        // 在.then()函数中，再次调用成功函数
+        // // 写法一：
+        // return Promise.resolve("第三行正确输出")
+        // 写法二：
+        return new Promise((resolve,reject)=>{
+            resolve("第三行正确输出")
+        })
+
+    },(err)=>{
+        // 失败函数reject中传入的参数，在此处变成了res
+        console.log(err);
+
+        return Promise.reject("第三行错误输出")
+    }).then((res)=>{
+        console.log(res)
+    },(err)=>{
+        console.log(err)
+    })
+```
+
+
+
+下面的就是promise常用的模板。通过在Promise对象后面不断地打点调用then()函数，像链表一样层层深入回调函数，使得代码可读性提升
+
+```javascript
+new Promise((resolve,reject)=>{
+    if(条件){
+        resolve(参数)
+    }  
+    else{
+        reject(参数)
+    }
+}).then((res)=>{
+    return Promise.resolve(参数)
+},(err)=>{
+    return Promise.reject(参数)
+}).then((res)=>{
+    return Promise.resolve(参数)
+},(err)=>{
+    return Promise.reject(参数)
+}).then(…).then(…)……
+```
+
+
+
+
+
+## 补充：ES6的类与对象
+
+定义类
+
+```javascript
+// 定义一个 Person 类
+class Person {
+  // 构造函数（创建对象时自动调用）
+  constructor(name, age) {
+    this.name = name;  // 属性：姓名
+    this.age = age;    // 属性：年龄
+  }
+
+  // 方法：打招呼
+  greet() {
+    return `你好！我是 ${this.name}，今年 ${this.age} 岁。`;
+  }
+
+  // 方法：过生日
+  haveBirthday() {
+    this.age++;  // 年龄+1
+    return `🎉 ${this.name} 过生日啦！`;
+  }
+}
+```
+
+
+
+创建对象（实例化）
+
+```javascript
+// 创建两个 Person 对象
+const alice = new Person("Alice", 25);
+const bob = new Person("Bob", 30);
+```
+
+
+
+调用对象方法、调用对象属性
+
+```javascript
+console.log(alice.greet()); // "你好！我是 Alice，今年 25 岁。"
+console.log(bob.greet());   // "你好！我是 Bob，今年 30 岁。"
+
+alice.haveBirthday();      // 调用方法
+console.log(alice.greet()); // "你好！我是 Alice，今年 26 岁。"
+
+console.log(bob.name); // "Bob"（直接访问属性）
+bob.age = 31;         // 直接修改属性
+console.log(bob.greet()); // "你好！我是 Bob，今年 31 岁。"
+```
+
+
+
+ 继承
+
+```javascript
+// 创建 Student 子类继承 Person
+class Student extends Person {
+  constructor(name, age, major) {
+    super(name, age);  // 调用父类构造函数
+    this.major = major; // 子类特有属性
+  }
+
+  // 子类特有方法
+  study() {
+    return `${this.name} 正在学习 ${this.major}`;
+  }
+}
+
+// 使用子类
+const student = new Student("小明", 20, "计算机");
+console.log(student.study());  // "小明 正在学习 计算机"
+console.log(student.greet());  // "你好！我是 小明，今年 20 岁。"（继承父类方法）
+```
+
+
+
+## axios发送get请求
+
+axios发送get请求并携带参数让前后后端识别只有一种写法：
+
+
+
+user/views.py中
+
+```python
+class ViewTest_get(View):
+    def get(self,request):
+        username = request.GET.get("username")
+        if username==None:
+            return JsonResponse({"code":200,"info":"who are you?"})
+        return JsonResponse({"code":200,"info":"hello {0} !this is get".format(username)})
+
+```
+
+在user/urls.py中
+
+```python
+path("test_get",ViewTest_get.as_view()),
+```
+
+在项目的urls.py中
+
+```python
+path("user/",include("user.urls"))
+```
+
+
+
+后面开始书写axios实例，参考https://www.axios-http.cn/docs/example，此处暂时使用cdn方式引入，此方式需要翻墙，否则接收不到axios变量。以后在Vue项目中主要通过npm下载。
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- cdn形式临时引入axios -->
+     <!-- 此方式引入时，需要翻墙 -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- 后面做Vue项目时再用npm引入 -->
+</head>
+
+<body>
+
+</body>
+<script>
+
+    // 向给定ID的用户发起请求
+    axios.get('http://127.0.0.1:8000/user/test_get?username=12345')
+        .then(function (response) {
+            // 处理成功情况
+            console.log(response);
+        })
+        .catch(function (error) {
+            // 处理错误情况
+            console.log(error);
+        })
+        .finally(function () {
+            // 总是会执行
+        });
+</script>
+
+</html>
+```
+
+成功在控制台打印结果
+
+![75472829667](一路通关Python全栈开发图片集\1754728296675.png)
 
 
 
@@ -1040,18 +1293,253 @@ module.exports = {
 
 
 
+## 补充：django的跨域问题解决
+
+CORS（跨域资源共享，Cross-Origin Resource Sharing）是一种跨域访问的机制，可让Ajax实现跨域访问。
+
+其实，在服务器的response header中，加入“Access-Control-Allow-Origin: *”便可支持CORS，很是的简单，apache/nginx等怎么配置，见参考文档。
+
+在Django中，有人开发了CORS-header的middleware
+
+只需在settings.py中做一些简单的配置即可，其他不用作任何修改，我们也不用自己手动的创建中间件对response处理了，直接用以下配置即可，  现在用起来服务器端完全开放，开启CORS，没有任何跨域烦恼 
+
+1，安装django-cors-headers库
+
+```
+pip install django-cors-headers -i https://pypi.tuna.tsinghua.edu.cn/simple
+```
+
+
+
+2，添加到应用程序中
+
+```
+INSTALLED_APPS  =  [ 
+    ... , 
+    "corsheaders" , 
+    ... , 
+]
+```
+
+
+
+3，在中间件中加监听响应
+
+CorsMiddleware 需要放在第一位，不放在第一位，可能会造成某些请求没有添加CORS。
+
+```
+MIDDLEWARE  =  [ 
+    "corsheaders.middleware.CorsMiddleware" , 
+    ... , 
+]
+```
+
+
+
+4，设置访问白名单
+
+```
+# CORS_ORIGIN_ALLOW_ALL为True, 指定所有域名(ip)都可以访问后端接口, 默认为False
+CORS_ORIGIN_ALLOW_ALL = True
+```
+
+
+
+5，设置允许携带cookie
+
+```
+CORS_ALLOW_CREDENTIALS = True
+```
+
+
+
+6，设置默认允许请求头方法。
+
+```
+CORS_ALLOW_METHODS = [
+    'GET',
+    'POST',
+    'PUT',
+    'PATCH',
+    'DELETE',
+]
+```
 
 
 
 
 
+## axios发送post请求
+
+axios发送get请求并携带参数让前后后端识别有两种写法：在url中携带参数、在请求体中携带参数。
+
+
+
+1.在url中携带参数
+
+这个是user/views.py。
+
+```python
+class ViewTest_post_1(View):
+    def post(self,request):
+        job=request.GET.get("job")
+        if job==None:
+            return JsonResponse({"code":200,"info":"一位无业游民"})
+        return JsonResponse({"code":200,"info":"一位{0}".format(job)})
+
+```
+
+这个是应用的user/urls.py
+
+```python
+path("test_post_1",ViewTest_post_1.as_view())
+```
+
+这个是外层的urls.py。做完之后，注意csrf问题解决。找到中间件配置，删除 `'django.middleware.csrf.CsrfViewMiddleware'`即可。
+
+```python
+path("user/",include("user.urls"))
+```
+
+
+
+后面开始书写axios实例，参考https://www.axios-http.cn/docs/example，此处暂时使用cdn方式引入，此方式需要翻墙，否则接收不到axios变量。以后再Vue项目中主要通过npm下载
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- cdn形式临时引入axios -->
+     <!-- 此方式引入时，需要翻墙 -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- 后面做Vue项目时再用npm引入 -->
+</head>
+
+<body>
+
+</body>
+<script>
+
+    // 向给定ID的用户发起请求
+    axios.post('http://127.0.0.1:8000/user/test_post_1?job=学生')
+        .then(function (response) {
+            // 处理成功情况
+            console.log(response);
+        })
+        .catch(function (error) {
+            // 处理错误情况
+            console.log(error);
+        })
+        .finally(function () {
+            // 总是会执行
+        });
+</script>
+
+</html>
+```
+
+成功在控制台打印结果
+
+![75474018100](一路通关Python全栈开发图片集\1754740181009.png)
 
 
 
 
 
+2.在请求体中携带参数
+
+这个是user/views.py。
+
+```python
+class ViewTest_post_2(View):
+    def post(self,request):
+        data = json.loads(request.body.decode("utf-8"))
+        print(data)
+        job=data["job"]
+        if job==None:
+            return JsonResponse({"code":200,"info":"一位无业游民"})
+        return JsonResponse({"code":200,"info":"一位{0}".format(job)})
+
+```
+
+这个是应用的user/urls.py
+
+```python
+path("test_post_2",ViewTest_post_2.as_view())
+```
+
+这个是外层的urls.py。做完之后，注意csrf问题解决。找到中间件配置，删除 `'django.middleware.csrf.CsrfViewMiddleware'`即可。
+
+```python
+path("user/",include("user.urls"))
+```
 
 
+
+后面开始书写axios实例，参考https://www.axios-http.cn/docs/example，此处暂时使用cdn方式引入，此方式需要翻墙，否则接收不到axios变量。以后再Vue项目中主要通过npm下载
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- cdn形式临时引入axios -->
+     <!-- 此方式引入时，需要翻墙 -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- 后面做Vue项目时再用npm引入 -->
+</head>
+
+<body>
+
+</body>
+<script>
+
+    // 向给定ID的用户发起请求
+    axios.post('http://127.0.0.1:8000/user/test_post_2',{
+        job:"student"
+    })
+        .then(function (response) {
+            // 处理成功情况
+            console.log(response);
+        })
+        .catch(function (error) {
+            // 处理错误情况
+            console.log(error);
+        })
+        .finally(function () {
+            // 总是会执行
+        });
+</script>
+
+</html>
+```
+
+成功在控制台打印结果
+
+![75474037150](一路通关Python全栈开发图片集\1754740371508.png)
+
+
+
+## 补充：django的post方式去除csrf安全机制
+
+注意csrf问题解决。找到中间件配置，删除 `'django.middleware.csrf.CsrfViewMiddleware'`即可。
+
+
+
+
+
+## get与post请求的区别
+
+原则上，get请求参数放在url中，post请求参数放在请求体中。
+
+但在某些不严格按照http协议书写的库与包中，post请求的某些参数也可以放在url中，这种情况比较多，比如django。（get请求的参数也有可能放在请求体中，但这个比较少）
 
 
 
