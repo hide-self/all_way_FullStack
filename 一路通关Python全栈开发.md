@@ -1130,6 +1130,28 @@ new Promise((resolve,reject)=>{
 
 
 
+上面的是链式调用Promise的方法，除此之外，也可以这样写一个普通的Promise对象方法，这个才是后面最常用的模板。【因为Promise自带异步效果】
+
+```
+new Promise((resolve,reject)=>{
+    if(条件){
+        resolve("操作成功！")
+    }  
+    else{
+        reject("操作失败！")
+    }
+}) .then((result) => {	// 处理成功的结果
+    console.log(result); // 输出: 操作成功！
+  })
+  .catch((error) => {// 处理失败的结果 或者 处理程序异常结果
+    console.error(error); // 如果失败，输出: 操作失败！
+  })
+```
+
+
+
+
+
 
 
 ## 补充：ES6的类与对象
@@ -1540,6 +1562,305 @@ path("user/",include("user.urls"))
 原则上，get请求参数放在url中，post请求参数放在请求体中。
 
 但在某些不严格按照http协议书写的库与包中，post请求的某些参数也可以放在url中，这种情况比较多，比如django。（get请求的参数也有可能放在请求体中，但这个比较少）
+
+
+
+## axios并发请求处理
+
+axios中还有能够一次性并发地发送多个请求的方法，他就是axios.all
+
+
+
+后端代码沿用之前的。
+
+前端代码如下：
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+</head>
+
+<body>
+
+</body>
+<script>
+    // 用axios.all()函数可以一次性并发地发送多个请求【用得比较少】
+    axios.all(
+        [
+            axios.get('http://127.0.0.1:8000/user/test_get?username=qlf'),
+            axios.post('http://127.0.0.1:8000/user/test_post_2',{job:"student"})
+        ]
+    )
+        .then(function (response) {
+            // 处理成功情况
+            console.log(response);  //最后返回结果就是一个响应列表，按照列表的方式来进行数据提取即可
+        })
+        .catch(function (error) {
+            // 处理错误情况
+            console.log(error);
+        })
+        .finally(function () {
+            // 总是会执行
+        });
+</script>
+
+</html>
+```
+
+
+
+最后打印的response结果解释一个响应列表，如下图所示。
+
+![75480996140](一路通关Python全栈开发图片集\1754809961407.png)
+
+
+
+
+
+## axios全局配置baseURL
+
+axios还可以通过书写全局baseURL使得每一次的请求不用带着前半段重复的url。具体在前端的体现就是修改`axios.defaults.baseURL=……`
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+</head>
+
+<body>
+
+</body>
+<script>
+    // axios模拟配置文件
+    // 配置基url
+    axios.defaults.baseURL='http://127.0.0.1:8000/'
+
+
+    
+    axios.all(
+        [	
+            // 配置了基url之后，就不用重复携带前半段了
+            axios.get('user/test_get?username=qlf'),
+            axios.post('user/test_post_2',{job:"student"})
+        ]
+    )
+        .then(function (response) {
+            // 处理成功情况
+            console.log(response);
+        })
+        .catch(function (error) {
+            // 处理错误情况
+            console.log(error);
+        })
+        .finally(function () {
+            // 总是会执行
+        });
+</script>
+
+</html>
+```
+
+最后打印的response结果解释一个响应列表，如下图所示。
+
+![75480996140](D:\all_way_FullStack\%E4%B8%80%E8%B7%AF%E9%80%9A%E5%85%B3Python%E5%85%A8%E6%A0%88%E5%BC%80%E5%8F%91%E5%9B%BE%E7%89%87%E9%9B%86\1754809961407.png)
+
+这样的全局基本配置其实还有很多，比如说timeout超时时间等等……他们的设置方式与这个类似
+
+
+
+
+
+
+
+## axios通用的封装实例与使用方法
+
+在request.js中书写：
+
+这里面用axios.create创建axios对象，名为httpService，在它的默认构造中设置baseURL、timeout。之后，在这个对象httpService的添加请求拦截器与响应拦截器。通常会在请求拦截器中添加token到请求头中。响应拦截器中也可以根据需要添加一些东西。
+
+```javascript
+// 引入axios
+import axios from 'axios';
+import store from '@/store'
+
+let baseUrl="http://localhost:8000/";
+// 创建axios实例
+const httpService = axios.create({
+    // url前缀-'http:xxx.xxx'
+    // baseURL: process.env.BASE_API, // 需自定义
+    baseURL:baseUrl,
+    // 请求超时时间
+    timeout: 3000 // 需自定义
+});
+
+//添加请求和响应拦截器
+// 添加请求拦截器
+httpService.interceptors.request.use(function (config) {
+    // 在发送请求之前做些什么
+    config.headers.AUTHORIZATION=window.sessionStorage.getItem('token');
+    //console.log("store="+store.getters.GET_TOKEN)
+    //config.headers.TOKEN=store.getters.GET_TOKEN
+    return config;
+}, function (error) {
+    // 对请求错误做些什么
+    return Promise.reject(error);
+});
+
+// 添加响应拦截器
+httpService.interceptors.response.use(function (response) {
+    // 对响应数据做点什么
+    return response;
+}, function (error) {
+    // 对响应错误做点什么
+    return Promise.reject(error);
+});
+
+/*网络请求部分*/
+
+/*
+ *  get请求
+ *  url:请求地址
+ *  params:参数
+ * */
+export function get(url, params = {}) {
+    return new Promise((resolve, reject) => {
+        httpService({
+            url: url,
+            method: 'get',
+            params: params
+        }).then(response => {
+            resolve(response);
+        }).catch(error => {
+            reject(error);
+        });
+    });
+}
+
+/*
+ *  post请求
+ *  url:请求地址
+ *  params:参数
+ * */
+export function post(url, params = {}) {
+    return new Promise((resolve, reject) => {
+        httpService({
+            url: url,
+            method: 'post',
+            data: params
+        }).then(response => {
+            console.log(response)
+            resolve(response);
+        }).catch(error => {
+            console.log(error)
+            reject(error);
+        });
+    });
+}
+
+/*
+ *  delete请求
+ *  url:请求地址
+ *  params:参数
+ * */
+export function del(url, params = {}) {
+    return new Promise((resolve, reject) => {
+        httpService({
+            url: url,
+            method: 'delete',
+            data: params
+        }).then(response => {
+            console.log(response)
+            resolve(response);
+        }).catch(error => {
+            console.log(error)
+            reject(error);
+        });
+    });
+}
+
+
+/*
+ *  文件上传
+ *  url:请求地址
+ *  params:参数
+ * */
+export function fileUpload(url, params = {}) {
+    return new Promise((resolve, reject) => {
+        httpService({
+            url: url,
+            method: 'post',
+            data: params,
+            headers: { 'Content-Type': 'multipart/form-data' }
+        }).then(response => {
+            resolve(response);
+        }).catch(error => {
+            reject(error);
+        });
+    });
+}
+
+export function getServerUrl(){
+    return baseUrl;
+}
+
+export default {
+    get,
+    post,
+    del,
+    fileUpload,
+    getServerUrl
+}
+```
+
+
+
+
+
+使用实例：
+
+```
+import requestUtil，{getServerUrl} from '@/util/request'
+
+
+const handleLogin=async()=>{
+  let result=await requestUtil.get("user/jwt_test");
+  let data=result.data;
+  if(data.code==200){
+    const token=data.token;
+    console.log("登录成功：token="+token);
+    window.sessionStorage.setItem("token",token)
+  }else{
+    console.log("登录出错！")
+  }
+}
+
+let currentBaseUrl=getServerUrl()
+```
+
+
+
+如果说，请求的基地址有多个的话，那么就要多封装几个像上面`request.js`一样的东西。
+
+
+
+
+
+
+
+
 
 
 

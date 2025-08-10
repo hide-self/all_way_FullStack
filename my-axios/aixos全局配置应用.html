@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+</head>
+
+<body>
+
+</body>
+<script>
+    // axios模拟配置文件
+    // 配置基url
+    axios.defaults.baseURL='http://127.0.0.1:8000/'
+
+
+    
+    axios.all(
+        [
+            // 配置了基url之后，就不用重复携带前半段了
+            axios.get('user/test_get?username=qlf'),
+            axios.post('user/test_post_2',{job:"student"})
+        ]
+    )
+        .then(function (response) {
+            // 处理成功情况
+            console.log(response);
+        })
+        .catch(function (error) {
+            // 处理错误情况
+            console.log(error);
+        })
+        .finally(function () {
+            // 总是会执行
+        });
+</script>
+
+</html>

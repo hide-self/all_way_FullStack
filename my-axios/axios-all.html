@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+</head>
+
+<body>
+
+</body>
+<script>
+    // 用axios.all()函数可以一次性并发地发送多个请求【用得比较少】
+    axios.all(
+        [
+            axios.get('http://127.0.0.1:8000/user/test_get?username=qlf'),
+            axios.post('http://127.0.0.1:8000/user/test_post_2',{job:"student"})
+        ]
+    )
+        .then(function (response) {
+            // 处理成功情况
+            console.log(response);  //最后返回结果就是一个响应列表，按照列表的方式来进行数据提取即可
+        })
+        .catch(function (error) {
+            // 处理错误情况
+            console.log(error);
+        })
+        .finally(function () {
+            // 总是会执行
+        });
+</script>
+
+</html>
